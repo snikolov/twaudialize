@@ -1,6 +1,7 @@
 import math
 import os
 import pickle
+import sys
 import time
 
 import matplotlib.pyplot as plt
@@ -20,7 +21,7 @@ oscMsg = OSCMessage('/midi/0')
 oscMsg.append(0)
 oscMsg.append(0)
 
-pause_time_seconds = 0.4
+pause_factor = 1.5
 
 # Sonify the global topology of an evolving graph.  
 # Strategy: compute the graph Laplacian as the graph evolves and map eigenvalues
@@ -68,19 +69,21 @@ for i, (src, dst, timestamp) in enumerate(edges[:-1]):
   topL = [ float(real(l)) for l in topL ]
   midi_note_func = lambda l : 7.5 * math.log(l * 30 + 1, 1.8)
   # Send note-on messages
+  sys.stdout.write('notes: ')
   for l in topL:
     midi_note = midi_note_func(l)
-    print 'note', midi_note
+    sys.stdout.write(str(midi_note) + ', ')
     if midi_note > 127:
       print 'Can\'t hear', midi_note
 
     oscMsg[0] = midi_note
     oscMsg[1] = midi_vel
     client.send(oscMsg)
+  sys.stdout.write('\n')
 
   time_diff_seconds = (edges[i + 1][2] - edges[i][2]) / 1000.0
   print 'time_diff', time_diff_seconds
-  time.sleep(time_diff_seconds / 4.0)
+  time.sleep(time_diff_seconds / float(pause_factor))
   #time.sleep(pause_time_seconds)
   # Send note-off messages
   for l in topL:
